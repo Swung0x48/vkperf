@@ -1,0 +1,68 @@
+// Copyright (c) 2026, Swung0x48 <swung0x48@outlook.com>
+// SPDX-License-Identifier: MIT
+
+#version 450
+
+#define WORKGROUP_SIZE 256
+
+layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0) uniform sampler2D source_texture;
+
+layout(set = 0, binding = 1, std430) writeonly buffer DummyOutputBuffer {
+    vec4 data[];
+} dummy_outputs;
+
+layout(set = 0, binding = 2) readonly uniform UniformBuffer {
+    uint loop_count;
+    uint texture_x_mask;
+    uint texture_pixel_mask;
+    uint texture_side_shift;
+} uniform_buffer;
+
+uint permute_pixel(uint value)
+{
+    value ^= value >> 16;
+    value *= 0x7feb352du;
+    value ^= value >> 15;
+    value *= 0x846ca68bu;
+    value ^= value >> 16;
+    return value & uniform_buffer.texture_pixel_mask;
+}
+
+vec4 fetch_pixel(uint value)
+{
+    uint pixel = permute_pixel(value);
+    return texelFetch(source_texture, ivec2(pixel & uniform_buffer.texture_x_mask, pixel >> uniform_buffer.texture_side_shift), 0);
+}
+
+void main()
+{
+    uint seed = gl_GlobalInvocationID.x * 0x9e3779b9u + gl_LocalInvocationIndex * 0x85ebca6bu;
+    vec4 acc0 = vec4(0.0);
+    vec4 acc1 = vec4(0.0);
+    vec4 acc2 = vec4(0.0);
+    vec4 acc3 = vec4(0.0);
+
+    for (uint i = 0; i < uniform_buffer.loop_count; i++) {
+        uint base = seed + i * 0x27d4eb2du;
+        acc0 += fetch_pixel(base + 0x00000000u);
+        acc1 += fetch_pixel(base + 0x165667b1u);
+        acc2 += fetch_pixel(base + 0xd3a2646cu);
+        acc3 += fetch_pixel(base + 0xfd7046c5u);
+        acc0 += fetch_pixel(base + 0xb55a4f09u);
+        acc1 += fetch_pixel(base + 0x5f356495u);
+        acc2 += fetch_pixel(base + 0x8f8f8f8fu);
+        acc3 += fetch_pixel(base + 0x9e3779b9u);
+        acc0 += fetch_pixel(base + 0x7f4a7c15u);
+        acc1 += fetch_pixel(base + 0x94d049bbu);
+        acc2 += fetch_pixel(base + 0x2545f491u);
+        acc3 += fetch_pixel(base + 0x369dea0fu);
+        acc0 += fetch_pixel(base + 0xdb4f0b91u);
+        acc1 += fetch_pixel(base + 0xbb67ae85u);
+        acc2 += fetch_pixel(base + 0x3c6ef372u);
+        acc3 += fetch_pixel(base + 0xa54ff53au);
+    }
+
+    dummy_outputs.data[gl_LocalInvocationIndex] = acc0 + acc1 + acc2 + acc3;
+}

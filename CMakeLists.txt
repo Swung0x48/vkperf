@@ -80,6 +80,7 @@ add_executable(vkperf
     src/tests/test_vk_latency.c
     src/tests/test_vk_list.c
     src/tests/test_vk_rate.c
+    src/tests/test_vk_rate_texture_cache.c
     src/tests/test_vk_rate_texture_fill.c
     src/tests/test_vk_storage_type.c
     src/tests/test_vk_uplink.c

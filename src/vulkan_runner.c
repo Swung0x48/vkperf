@@ -32,6 +32,7 @@
 #include "tests/test_vk_cuprobe.h"
 #include "tests/test_vk_latency.h"
 #include "tests/test_vk_rate.h"
+#include "tests/test_vk_rate_texture_cache.h"
 #include "tests/test_vk_rate_texture_fill.h"
 #include "tests/test_vk_storage_type.h"
 #include "tests/test_vk_uplink.h"
@@ -49,6 +50,8 @@ test_status VulkanRunnerRegisterTests() {
     status = TestsVulkanLatencyRegister();
     TEST_RETFAIL(status);
     status = TestsVulkanRateRegister();
+    TEST_RETFAIL(status);
+    status = TestsVulkanRateTextureCacheRegister();
     TEST_RETFAIL(status);
     status = TestsVulkanRateTextureFillRegister();
     TEST_RETFAIL(status);
