@@ -1,0 +1,64 @@
+// Copyright (c) 2026, Swung0x48 <swung0x48@outlook.com>
+// SPDX-License-Identifier: MIT
+
+#version 450
+
+#define THREAD_GROUP_SIZE 256
+
+layout(local_size_x = THREAD_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, std430) readonly buffer SourceBuffer {
+    uint source_data[];
+};
+
+layout(set = 0, binding = 1, std430) writeonly buffer OutputBuffer {
+    float output_data[];
+};
+
+layout(set = 0, binding = 2) uniform UniformBuffer {
+    uint elements_mask;
+    uint write_index;
+    uint read_start_address;
+    uint access_pattern;
+} uniforms;
+
+shared float dummy_lds[THREAD_GROUP_SIZE];
+
+uint hash1(uint c)
+{
+    return c * 0x3504f333u;
+}
+
+vec4 unpack_rgba8(uint packed_value)
+{
+    return vec4(
+        float(packed_value & 0xffu),
+        float((packed_value >> 8) & 0xffu),
+        float((packed_value >> 16) & 0xffu),
+        float((packed_value >> 24) & 0xffu)) * (1.0 / 255.0);
+}
+
+void main()
+{
+    uint gix = gl_LocalInvocationID.x;
+    uint htid = 0u;
+
+    if (uniforms.access_pattern == 1u) {
+        htid = gix;
+    } else if (uniforms.access_pattern == 2u) {
+        htid = hash1(gix) & 0xfu;
+    }
+
+    vec4 value = vec4(0.0);
+    for (int i = 0; i < 256; ++i) {
+        uint elem_idx = (htid + uint(i) + uniforms.read_start_address) | uniforms.elements_mask;
+        value += unpack_rgba8(source_data[elem_idx & 0xfffffu]);
+    }
+
+    dummy_lds[gix] = value.x + value.y + value.z + value.w;
+    barrier();
+
+    if (uniforms.write_index != 0xffffffffu) {
+        output_data[gl_GlobalInvocationID.x] = dummy_lds[uniforms.write_index & 0xffu];
+    }
+}

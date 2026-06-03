@@ -1,0 +1,58 @@
+// Copyright (c) 2026, Swung0x48 <swung0x48@outlook.com>
+// SPDX-License-Identifier: MIT
+
+#version 450
+
+#define THREAD_GROUP_DIM 16
+
+layout(local_size_x = THREAD_GROUP_DIM, local_size_y = THREAD_GROUP_DIM, local_size_z = 1) in;
+
+layout(set = 0, binding = 0) uniform sampler2D source_texture;
+
+layout(set = 0, binding = 1, std430) writeonly buffer OutputBuffer {
+    float output_data[];
+};
+
+layout(set = 0, binding = 2) uniform UniformBuffer {
+    uint elements_mask;
+    uint write_index;
+    uint read_start_address;
+    uint access_pattern;
+} uniforms;
+
+shared float dummy_lds[THREAD_GROUP_DIM][THREAD_GROUP_DIM];
+
+uint hash1(uint c)
+{
+    return c * 0x3504f333u;
+}
+
+void main()
+{
+    uvec2 gid = gl_LocalInvocationID.xy;
+    uvec2 htid = uvec2(0u);
+
+    if (uniforms.access_pattern == 1u) {
+        htid = gid;
+    } else if (uniforms.access_pattern == 2u) {
+        htid = uvec2(hash1(gid.x) & 0x4u, hash1(gid.y) & 0x4u);
+    }
+
+    vec4 value = vec4(0.0);
+    for (int y = 0; y < 16; ++y) {
+        for (int x = 0; x < 16; ++x) {
+            uvec2 elem_idx = (htid + uvec2(uint(x), uint(y)) + uvec2(uniforms.read_start_address)) | uvec2(uniforms.elements_mask);
+            value += texelFetch(source_texture, ivec2(elem_idx & uvec2(1023u)), 0);
+        }
+    }
+
+    dummy_lds[gid.y][gid.x] = value.x + value.y + value.z + value.w;
+    barrier();
+
+    if (uniforms.write_index != 0xffffffffu) {
+        uint index_x = uniforms.write_index & 0xffu;
+        uint index_y = (uniforms.write_index >> 8) & 0xffu;
+        uint output_index = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y;
+        output_data[output_index] = dummy_lds[index_y & 0xfu][index_x & 0xfu];
+    }
+}

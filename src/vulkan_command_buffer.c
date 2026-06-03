@@ -515,7 +515,7 @@ test_status VulkanCommandBufferTransitionImageLayout(vulkan_command_sequence *se
         image_memory_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         image_memory_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         src_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
     } else {
         return TEST_VK_UNSUPPORTED_IMAGE_LAYOUT_TRANSITION;
     }

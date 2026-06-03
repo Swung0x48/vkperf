@@ -1,0 +1,60 @@
+// Copyright (c) 2026, Swung0x48 <swung0x48@outlook.com>
+// SPDX-License-Identifier: MIT
+
+#version 450
+
+#define WORKGROUP_SIZE 256
+
+layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0) uniform sampler2D source_texture;
+
+layout(set = 0, binding = 1, std430) writeonly buffer DummyOutputBuffer {
+    vec4 data[];
+} dummy_outputs;
+
+layout(set = 0, binding = 2) readonly uniform UniformBuffer {
+    uint loop_count;
+    uint texture_x_mask;
+    uint texture_pixel_mask;
+    uint texture_side_shift;
+    float inv_texture_side;
+} uniform_buffer;
+
+vec4 sample_pixel(uint pixel)
+{
+    uint wrapped_pixel = pixel & uniform_buffer.texture_pixel_mask;
+    vec2 coord = (vec2(wrapped_pixel & uniform_buffer.texture_x_mask, wrapped_pixel >> uniform_buffer.texture_side_shift) + vec2(0.5)) * uniform_buffer.inv_texture_side;
+    return texture(source_texture, coord);
+}
+
+void main()
+{
+    uint base = gl_GlobalInvocationID.x * 16u;
+    vec4 acc0 = vec4(0.0);
+    vec4 acc1 = vec4(0.0);
+    vec4 acc2 = vec4(0.0);
+    vec4 acc3 = vec4(0.0);
+
+    for (uint i = 0; i < uniform_buffer.loop_count; i++) {
+        uint pixel = base + (i << uniform_buffer.texture_side_shift);
+        acc0 += sample_pixel(pixel + 0u);
+        acc1 += sample_pixel(pixel + 1u);
+        acc2 += sample_pixel(pixel + 2u);
+        acc3 += sample_pixel(pixel + 3u);
+        acc0 += sample_pixel(pixel + 4u);
+        acc1 += sample_pixel(pixel + 5u);
+        acc2 += sample_pixel(pixel + 6u);
+        acc3 += sample_pixel(pixel + 7u);
+        acc0 += sample_pixel(pixel + 8u);
+        acc1 += sample_pixel(pixel + 9u);
+        acc2 += sample_pixel(pixel + 10u);
+        acc3 += sample_pixel(pixel + 11u);
+        acc0 += sample_pixel(pixel + 12u);
+        acc1 += sample_pixel(pixel + 13u);
+        acc2 += sample_pixel(pixel + 14u);
+        acc3 += sample_pixel(pixel + 15u);
+    }
+
+    dummy_outputs.data[gl_LocalInvocationIndex] = acc0 + acc1 + acc2 + acc3;
+}

@@ -56,6 +56,7 @@ add_custom_command(
 )
 add_custom_target(vkperf_embed_shaders DEPENDS ${VKPERF_GENERATED_SHADER_HEADER})
 set_source_files_properties(${VKPERF_GENERATED_SHADER_HEADER} PROPERTIES GENERATED TRUE)
+set_source_files_properties(src/resources.c PROPERTIES OBJECT_DEPENDS ${VKPERF_GENERATED_SHADER_HEADER})
 
 add_executable(vkperf
     src/buffer_filler.c
@@ -79,6 +80,8 @@ add_executable(vkperf
     src/tests/test_vk_latency.c
     src/tests/test_vk_list.c
     src/tests/test_vk_rate.c
+    src/tests/test_vk_rate_texture_fill.c
+    src/tests/test_vk_storage_type.c
     src/tests/test_vk_uplink.c
     ${VKPERF_GENERATED_SHADER_HEADER}
 )
