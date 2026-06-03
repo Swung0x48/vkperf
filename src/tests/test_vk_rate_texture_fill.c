@@ -24,6 +24,7 @@
 #define VULKAN_RATE_TEXTURE_FILL_RNG_SEED               (332487265)
 #define VULKAN_RATE_TEXTURE_FILL_OP_TEXEL_FETCH         (0)
 #define VULKAN_RATE_TEXTURE_FILL_OP_NEAREST             (1)
+#define VULKAN_RATE_TEXTURE_FILL_OP_LINEAR              (2)
 
 typedef struct vulkan_rate_texture_fill_uniform_buffer_t {
     uint32_t loop_count;
@@ -36,8 +37,9 @@ typedef struct vulkan_rate_texture_fill_uniform_buffer_t {
 
 static test_status _VulkanRateTextureFillEntry(vulkan_physical_device *device, void *config_data);
 static test_status _VulkanRateTextureFillRegisterSubtest(uint32_t operation, const char *test_name);
-static test_status _VulkanRateTextureFillRunSide(vulkan_device *device, vulkan_compute_pipeline *pipeline, vulkan_memory *uniform_memory, vulkan_command_sequence *command_sequence, uint32_t texture_side, uint64_t *top_result, uint64_t *top_workgroups, uint64_t *top_loops);
+static test_status _VulkanRateTextureFillRunSide(vulkan_device *device, vulkan_compute_pipeline *pipeline, vulkan_memory *uniform_memory, vulkan_command_sequence *command_sequence, uint32_t texture_side, uint32_t operation, uint64_t *top_result, uint64_t *top_workgroups, uint64_t *top_loops);
 static test_status _VulkanRateTextureFillFillTexture(vulkan_texture *texture, uint32_t texture_side);
+static test_status _VulkanRateTextureFillConfigureSampler(vulkan_texture *texture, uint32_t operation);
 static test_status _VulkanRateTextureFillExecuteKernel(uint64_t workgroup_count, uint32_t loop_count, uint32_t texture_side, uint64_t *result, uint64_t *time_taken, vulkan_device *device, vulkan_region *uniform_region, vulkan_command_sequence *command_sequence, vulkan_compute_pipeline *pipeline);
 static uint32_t _VulkanRateTextureFillPowerOfTwoLog2(uint32_t value);
 static const char *_VulkanRateTextureFillGetShaderName(uint32_t operation);
@@ -46,7 +48,9 @@ static const char *_VulkanRateTextureFillGetOperationName(uint32_t operation);
 test_status TestsVulkanRateTextureFillRegister() {
     test_status status = _VulkanRateTextureFillRegisterSubtest(VULKAN_RATE_TEXTURE_FILL_OP_TEXEL_FETCH, TESTS_VULKAN_RATE_TEXTURE_FILL_TEXEL_FETCH_NAME);
     TEST_RETFAIL(status);
-    return _VulkanRateTextureFillRegisterSubtest(VULKAN_RATE_TEXTURE_FILL_OP_NEAREST, TESTS_VULKAN_RATE_TEXTURE_FILL_NEAREST_NAME);
+    status = _VulkanRateTextureFillRegisterSubtest(VULKAN_RATE_TEXTURE_FILL_OP_NEAREST, TESTS_VULKAN_RATE_TEXTURE_FILL_NEAREST_NAME);
+    TEST_RETFAIL(status);
+    return _VulkanRateTextureFillRegisterSubtest(VULKAN_RATE_TEXTURE_FILL_OP_LINEAR, TESTS_VULKAN_RATE_TEXTURE_FILL_LINEAR_NAME);
 }
 
 static test_status _VulkanRateTextureFillRegisterSubtest(uint32_t operation, const char *test_name) {
@@ -150,7 +154,7 @@ static test_status _VulkanRateTextureFillEntry(vulkan_physical_device *physical_
         uint64_t top_loops = 0;
 
         INFO("Testing %s texture side %lu...\n", operation_name, texture_side);
-        status = _VulkanRateTextureFillRunSide(&device, &pipeline, &uniform_memory, &command_sequence, texture_side, &top_result, &top_workgroups, &top_loops);
+        status = _VulkanRateTextureFillRunSide(&device, &pipeline, &uniform_memory, &command_sequence, texture_side, operation, &top_result, &top_workgroups, &top_loops);
         if (!TEST_SUCCESS(status)) {
             goto cleanup_command_buffer;
         }
@@ -185,7 +189,7 @@ error:
     return status;
 }
 
-static test_status _VulkanRateTextureFillRunSide(vulkan_device *device, vulkan_compute_pipeline *pipeline, vulkan_memory *uniform_memory, vulkan_command_sequence *command_sequence, uint32_t texture_side, uint64_t *top_result, uint64_t *top_workgroups, uint64_t *top_loops) {
+static test_status _VulkanRateTextureFillRunSide(vulkan_device *device, vulkan_compute_pipeline *pipeline, vulkan_memory *uniform_memory, vulkan_command_sequence *command_sequence, uint32_t texture_side, uint32_t operation, uint64_t *top_result, uint64_t *top_workgroups, uint64_t *top_loops) {
     test_status status = TEST_OK;
 
     vulkan_memory memory;
@@ -205,6 +209,10 @@ static test_status _VulkanRateTextureFillRunSide(vulkan_device *device, vulkan_c
     }
 
     vulkan_texture *source_texture = VulkanMemoryGetTexture(&memory, "source texture");
+    status = _VulkanRateTextureFillConfigureSampler(source_texture, operation);
+    if (!TEST_SUCCESS(status)) {
+        goto free_memory;
+    }
     status = _VulkanRateTextureFillFillTexture(source_texture, texture_side);
     if (!TEST_SUCCESS(status)) {
         goto free_memory;
@@ -296,6 +304,44 @@ static test_status _VulkanRateTextureFillFillTexture(vulkan_texture *texture, ui
     return VulkanTexturePrepareForRender(texture);
 }
 
+static test_status _VulkanRateTextureFillConfigureSampler(vulkan_texture *texture, uint32_t operation) {
+    if (texture == NULL) {
+        return TEST_INVALID_PARAMETER;
+    }
+    if (operation != VULKAN_RATE_TEXTURE_FILL_OP_LINEAR) {
+        return TEST_OK;
+    }
+
+    VkDevice device = texture->memory_pool->device->device;
+    if (texture->image_sampler != VK_NULL_HANDLE) {
+        vkDestroySampler(device, texture->image_sampler, NULL);
+        texture->image_sampler = VK_NULL_HANDLE;
+    }
+
+    VkSamplerCreateInfo sampler_create_info = {0};
+    sampler_create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_create_info.pNext = NULL;
+    sampler_create_info.magFilter = VK_FILTER_LINEAR;
+    sampler_create_info.minFilter = VK_FILTER_LINEAR;
+    sampler_create_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_create_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_create_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_create_info.anisotropyEnable = VK_FALSE;
+    sampler_create_info.maxAnisotropy = 0;
+    sampler_create_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    sampler_create_info.unnormalizedCoordinates = VK_FALSE;
+    sampler_create_info.compareEnable = VK_FALSE;
+    sampler_create_info.compareOp = VK_COMPARE_OP_ALWAYS;
+    sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    sampler_create_info.mipLodBias = 0.0f;
+    sampler_create_info.minLod = 0.0f;
+    sampler_create_info.maxLod = 0.0f;
+
+    VkResult res = vkCreateSampler(device, &sampler_create_info, NULL, &(texture->image_sampler));
+    VULKAN_RETFAIL(res, TEST_VK_SAMPLER_CREATION_ERROR);
+    return TEST_OK;
+}
+
 static test_status _VulkanRateTextureFillExecuteKernel(uint64_t workgroup_count, uint32_t loop_count, uint32_t texture_side, uint64_t *result, uint64_t *time_taken, vulkan_device *device, vulkan_region *uniform_region, vulkan_command_sequence *command_sequence, vulkan_compute_pipeline *pipeline) {
     test_status status = TEST_OK;
     volatile vulkan_rate_texture_fill_uniform_buffer *uniform_buffer_memory = VulkanMemoryMap(uniform_region);
@@ -383,6 +429,8 @@ static const char *_VulkanRateTextureFillGetShaderName(uint32_t operation) {
         return "vulkan_rate_texture_fill_texel_fetch.spv";
     case VULKAN_RATE_TEXTURE_FILL_OP_NEAREST:
         return "vulkan_rate_texture_fill_nearest.spv";
+    case VULKAN_RATE_TEXTURE_FILL_OP_LINEAR:
+        return "vulkan_rate_texture_fill_linear.spv";
     default:
         return NULL;
     }
@@ -394,6 +442,8 @@ static const char *_VulkanRateTextureFillGetOperationName(uint32_t operation) {
         return "texelFetch";
     case VULKAN_RATE_TEXTURE_FILL_OP_NEAREST:
         return "nearest";
+    case VULKAN_RATE_TEXTURE_FILL_OP_LINEAR:
+        return "linear";
     default:
         return NULL;
     }

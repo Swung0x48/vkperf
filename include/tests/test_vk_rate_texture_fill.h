@@ -11,6 +11,7 @@ extern "C" {
 #define TESTS_VULKAN_RATE_TEXTURE_FILL_VERSION                 TEST_MKVERSION(1, 0, 0)
 #define TESTS_VULKAN_RATE_TEXTURE_FILL_TEXEL_FETCH_NAME        "vk_rate_texture_fill_texel_fetch"
 #define TESTS_VULKAN_RATE_TEXTURE_FILL_NEAREST_NAME            "vk_rate_texture_fill_nearest"
+#define TESTS_VULKAN_RATE_TEXTURE_FILL_LINEAR_NAME             "vk_rate_texture_fill_linear"
 
 test_status TestsVulkanRateTextureFillRegister();
 
