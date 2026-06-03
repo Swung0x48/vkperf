@@ -11,6 +11,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(VKPERF_SHADER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders)
 file(GLOB VKPERF_SHADER_SOURCES CONFIGURE_DEPENDS
     ${VKPERF_SHADER_SOURCE_DIR}/*.comp
+    ${VKPERF_SHADER_SOURCE_DIR}/*.vert
+    ${VKPERF_SHADER_SOURCE_DIR}/*.frag
 )
 
 if(NOT VKPERF_SHADER_SOURCES)
@@ -80,6 +82,8 @@ add_executable(vkperf
     src/tests/test_vk_latency.c
     src/tests/test_vk_list.c
     src/tests/test_vk_rate.c
+    src/tests/test_vk_rate_pixel_fill.c
+    src/tests/test_vk_rate_ray_isect.cpp
     src/tests/test_vk_rate_texture_cache.c
     src/tests/test_vk_rate_texture_fill.c
     src/tests/test_vk_storage_type.c
