@@ -1,0 +1,22 @@
+# Build directories
+build*/
+
+# CMake/Ninja generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+build.ninja
+.ninja_deps
+.ninja_log
+compile_commands.json
+
+# Local binaries and libraries
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+*.obj
+*.o
+*.pdb
+*.ilk

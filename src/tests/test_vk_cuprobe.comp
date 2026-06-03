@@ -1,0 +1,32 @@
+#version 450
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+// Spec Constant ID 0 = maxComputeSharedMemorySize
+layout(constant_id = 0) const uint SHMEM_SIZE_BYTES = 4096; 
+// float is 4 bytes large
+shared float payload[SHMEM_SIZE_BYTES / 4];
+
+layout(std430, set = 0, binding = 0) buffer InBuf { float data[]; } inBuf;
+layout(std430, set = 0, binding = 1) buffer OutBuf { float data[]; } outBuf;
+
+void main() {
+    uint gid = gl_GlobalInvocationID.x;
+    uint lid = gl_LocalInvocationID.x;
+
+    // 1. Force using Shared Memory
+    if (lid < (SHMEM_SIZE_BYTES / 4)) {
+        payload[lid] = inBuf.data[gid % 1024];
+    }
+    barrier();
+
+    // 2. Burn cycles
+    float val = float(lid);
+    for (int i = 0; i < 5000; ++i) { 
+        val = fma(val, 1.00001, 0.00001); 
+    }
+
+    // 3. Write back, preventing compiler optimization
+    if (gid < inBuf.data.length()) {
+         outBuf.data[gid] = val + payload[0];
+    }
+}
