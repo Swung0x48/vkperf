@@ -334,12 +334,20 @@ test_status VulkanGetPhysicalQueueFamilyProperties(vulkan_physical_device *devic
     return TEST_OK;
 }
 
+static VkQueueFlags _VulkanGetEffectiveQueueFamilyFlags(VkQueueFlags queue_flags) {
+    if ((queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) != 0) {
+        queue_flags |= VK_QUEUE_TRANSFER_BIT;
+    }
+    return queue_flags;
+}
+
 test_status VulkanSelectQueueFamilyExact(uint32_t *queue_index, VkQueueFamilyProperties *queue_family_properties, uint32_t queue_family_count, VkQueueFlags required_flags, uint32_t match_mask) {
     if (queue_index == NULL || queue_family_properties == NULL || queue_family_count == 0) {
         return TEST_INVALID_PARAMETER;
     }
     for (uint32_t i = 0; i < queue_family_count; i++) {
-        if (((queue_family_properties[i].queueFlags & match_mask) ^ required_flags) == 0) {
+        VkQueueFlags queue_flags = _VulkanGetEffectiveQueueFamilyFlags(queue_family_properties[i].queueFlags);
+        if (((queue_flags & match_mask) ^ required_flags) == 0) {
             *queue_index = i;
             return TEST_OK;
         }
@@ -357,7 +365,8 @@ test_status VulkanSelectQueueFamilyMultipleExact(uint32_t **queue_indices, uint3
     }
     uint32_t suitable_queue_count = 0;
     for (uint32_t i = 0; i < queue_family_count; i++) {
-        if (((queue_family_properties[i].queueFlags & match_mask) ^ required_flags) == 0) {
+        VkQueueFlags queue_flags = _VulkanGetEffectiveQueueFamilyFlags(queue_family_properties[i].queueFlags);
+        if (((queue_flags & match_mask) ^ required_flags) == 0) {
             suitable_queue_count++;
         }
     }
@@ -369,7 +378,8 @@ test_status VulkanSelectQueueFamilyMultipleExact(uint32_t **queue_indices, uint3
         return TEST_OUT_OF_MEMORY;
     }
     for (uint32_t i = 0, j = 0; i < queue_family_count; i++) {
-        if (((queue_family_properties[i].queueFlags & match_mask) ^ required_flags) == 0) {
+        VkQueueFlags queue_flags = _VulkanGetEffectiveQueueFamilyFlags(queue_family_properties[i].queueFlags);
+        if (((queue_flags & match_mask) ^ required_flags) == 0) {
             queues[j] = i;
             j++;
         }
