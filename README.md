@@ -8,9 +8,9 @@ The program writes benchmark results to stdout as CSV by default. Diagnostic log
 ## Build on Windows
 
 ```powershell
-$vsdev = 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat'
-$cmd = "call `"$vsdev`" -arch=x64 -host_arch=x64 && cmake -S . -B build-msvc-release -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build-msvc-release"
-cmd.exe /d /c $cmd
+call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64
+cmake -S . -B build-msvc-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build-msvc-release
 ```
 
 If CMake cannot find Vulkan, install the Vulkan SDK and make sure `VULKAN_SDK` is visible in the shell.
