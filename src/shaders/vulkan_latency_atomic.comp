@@ -1,0 +1,36 @@
+// Copyright (c) 2026, Swung0x48 <swung0x48@outlook.com>
+// SPDX-License-Identifier: MIT
+
+#version 450
+
+#extension GL_EXT_shader_explicit_arithmetic_types : require
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0, std430) coherent buffer AtomicBuffer {
+    uint32_t turn;
+    uint32_t sink;
+} atomic_buffer;
+
+layout(set = 0, binding = 1) readonly uniform UniformBuffer {
+    uint32_t loop_count;
+} uniform_buffer;
+
+void WaitForTurn(uint32_t desired_turn) {
+    while (atomicAdd(atomic_buffer.turn, uint32_t(0)) != desired_turn) {
+    }
+}
+
+void main() {
+    uint32_t role = gl_WorkGroupID.x;
+    if (role > 1) {
+        return;
+    }
+
+    for (uint32_t i = 0; i < uniform_buffer.loop_count; i++) {
+        WaitForTurn(role);
+        atomicExchange(atomic_buffer.turn, 1 - role);
+    }
+
+    atomicAdd(atomic_buffer.sink, role + 1);
+}

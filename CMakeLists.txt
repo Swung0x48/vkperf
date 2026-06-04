@@ -80,6 +80,7 @@ add_executable(vkperf
     src/tests/test_vk_cuprobe.cpp
     src/tests/test_vk_info.c
     src/tests/test_vk_latency.c
+    src/tests/test_vk_latency_atomic.c
     src/tests/test_vk_list.c
     src/tests/test_vk_rate.c
     src/tests/test_vk_rate_fp32_mac_ilp.c

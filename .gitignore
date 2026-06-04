@@ -1,5 +1,6 @@
 # Build directories
 build*/
+.vs/
 
 # CMake/Ninja generated files
 CMakeFiles/

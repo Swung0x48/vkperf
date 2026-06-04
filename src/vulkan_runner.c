@@ -31,6 +31,7 @@
 #include "tests/test_vk_bandwidth.h"
 #include "tests/test_vk_cuprobe.h"
 #include "tests/test_vk_latency.h"
+#include "tests/test_vk_latency_atomic.h"
 #include "tests/test_vk_rate.h"
 #include "tests/test_vk_rate_fp32_mac_ilp.h"
 #include "tests/test_vk_rate_pixel_fill.h"
@@ -51,6 +52,8 @@ test_status VulkanRunnerRegisterTests() {
     status = TestsVulkanCUProbeRegister();
     TEST_RETFAIL(status);
     status = TestsVulkanLatencyRegister();
+    TEST_RETFAIL(status);
+    status = TestsVulkanLatencyAtomicRegister();
     TEST_RETFAIL(status);
     status = TestsVulkanRateRegister();
     TEST_RETFAIL(status);
