@@ -88,6 +88,7 @@ add_executable(vkperf
     src/tests/test_vk_rate_ray_isect.cpp
     src/tests/test_vk_rate_texture_cache.c
     src/tests/test_vk_rate_texture_fill.c
+    src/tests/test_vk_resident_wave_slots.c
     src/tests/test_vk_storage_type.c
     src/tests/test_vk_uplink.c
     ${VKPERF_GENERATED_SHADER_HEADER}

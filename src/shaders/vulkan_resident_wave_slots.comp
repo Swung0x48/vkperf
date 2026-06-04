@@ -1,0 +1,46 @@
+#version 450
+
+layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, set = 0, binding = 0) coherent buffer ProbeBuffer {
+    uint data[];
+} probe;
+
+const uint PROBE_TARGET_WORKGROUPS = 0u;
+const uint PROBE_SPIN_ITERATIONS = 1u;
+const uint PROBE_ARRIVED = 2u;
+const uint PROBE_PASSED = 3u;
+const uint PROBE_TIMED_OUT = 4u;
+const uint PROBE_SINK = 5u;
+
+void main() {
+    if (gl_LocalInvocationIndex == 0u) {
+        uint target_workgroups = probe.data[PROBE_TARGET_WORKGROUPS];
+        uint spin_iterations = probe.data[PROBE_SPIN_ITERATIONS];
+        bool passed = false;
+
+        atomicAdd(probe.data[PROBE_ARRIVED], 1u);
+
+        for (uint i = 0u; i < spin_iterations; i++) {
+            if (atomicAdd(probe.data[PROBE_ARRIVED], 0u) >= target_workgroups) {
+                passed = true;
+                break;
+            }
+            if (atomicAdd(probe.data[PROBE_TIMED_OUT], 0u) != 0u) {
+                break;
+            }
+        }
+
+        if (passed && atomicAdd(probe.data[PROBE_TIMED_OUT], 0u) == 0u) {
+            atomicAdd(probe.data[PROBE_PASSED], 1u);
+        } else {
+            atomicAdd(probe.data[PROBE_TIMED_OUT], 1u);
+        }
+    }
+
+    barrier();
+
+    if (gl_LocalInvocationIndex == 0u) {
+        atomicAdd(probe.data[PROBE_SINK], 1u);
+    }
+}

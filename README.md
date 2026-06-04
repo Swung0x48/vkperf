@@ -41,6 +41,7 @@ vkperf --list-tests
 vkperf --test vk_list
 vkperf --test vk_info --device 0
 vkperf --test vk_cuprobe --device 0 > cuprobe.csv
+vkperf --test vk_resident_wave_slots --device 0 > resident_wave_slots.csv
 vkperf --test vk_rate_fp32_add --device 0 > result.csv
 ```
 

@@ -38,6 +38,7 @@
 #include "tests/test_vk_rate_ray_isect.h"
 #include "tests/test_vk_rate_texture_cache.h"
 #include "tests/test_vk_rate_texture_fill.h"
+#include "tests/test_vk_resident_wave_slots.h"
 #include "tests/test_vk_storage_type.h"
 #include "tests/test_vk_uplink.h"
 
@@ -66,6 +67,8 @@ test_status VulkanRunnerRegisterTests() {
     status = TestsVulkanRateTextureCacheRegister();
     TEST_RETFAIL(status);
     status = TestsVulkanRateTextureFillRegister();
+    TEST_RETFAIL(status);
+    status = TestsVulkanResidentWaveSlotsRegister();
     TEST_RETFAIL(status);
     status = TestsVulkanStorageTypeRegister();
     TEST_RETFAIL(status);
