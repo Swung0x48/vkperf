@@ -82,6 +82,7 @@ add_executable(vkperf
     src/tests/test_vk_latency.c
     src/tests/test_vk_list.c
     src/tests/test_vk_rate.c
+    src/tests/test_vk_rate_fp32_mac_ilp.c
     src/tests/test_vk_rate_pixel_fill.c
     src/tests/test_vk_rate_ray_isect.cpp
     src/tests/test_vk_rate_texture_cache.c

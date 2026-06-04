@@ -1,0 +1,186 @@
+// Copyright (c) 2026, Swung0x48 <swung0x48@outlook.com>
+// SPDX-License-Identifier: MIT
+
+#version 450
+
+#extension GL_EXT_shader_explicit_arithmetic_types : require
+#extension GL_EXT_shader_explicit_arithmetic_types_float32 : require
+
+#define WORKGROUP_SIZE 256
+
+layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+layout(constant_id = 0) const uint VULKAN_RATE_ILP = 1u;
+
+layout(set = 0, binding = 0, std430) readonly buffer DummyInputBuffer {
+    float data[];
+} dummy_inputs;
+
+layout(set = 0, binding = 1, std430) writeonly buffer DummyOutputBuffer {
+    float data[];
+} dummy_outputs;
+
+layout(set = 0, binding = 2) readonly uniform UniformBuffer {
+    uint32_t loop_count;
+} uniform_buffer;
+
+#define STEP(dst, src, bias) dst = fma(src, 0.999969482421875f, bias)
+
+void main() {
+    uint32_t thread_index = gl_LocalInvocationIndex * 16u;
+    float x0 = dummy_inputs.data[thread_index + 0u];
+    float x1 = dummy_inputs.data[thread_index + 1u];
+    float x2 = dummy_inputs.data[thread_index + 2u];
+    float x3 = dummy_inputs.data[thread_index + 3u];
+    float x4 = dummy_inputs.data[thread_index + 4u];
+    float x5 = dummy_inputs.data[thread_index + 5u];
+    float x6 = dummy_inputs.data[thread_index + 6u];
+    float x7 = dummy_inputs.data[thread_index + 7u];
+    float x8 = dummy_inputs.data[thread_index + 8u];
+    float x9 = dummy_inputs.data[thread_index + 9u];
+    float x10 = dummy_inputs.data[thread_index + 10u];
+    float x11 = dummy_inputs.data[thread_index + 11u];
+    float x12 = dummy_inputs.data[thread_index + 12u];
+    float x13 = dummy_inputs.data[thread_index + 13u];
+    float x14 = dummy_inputs.data[thread_index + 14u];
+    float x15 = dummy_inputs.data[thread_index + 15u];
+
+    const float b0 = 0.0000010f;
+    const float b1 = 0.0000011f;
+    const float b2 = 0.0000012f;
+    const float b3 = 0.0000013f;
+    const float b4 = 0.0000014f;
+    const float b5 = 0.0000015f;
+    const float b6 = 0.0000016f;
+    const float b7 = 0.0000017f;
+    const float b8 = 0.0000018f;
+    const float b9 = 0.0000019f;
+    const float b10 = 0.0000020f;
+    const float b11 = 0.0000021f;
+    const float b12 = 0.0000022f;
+    const float b13 = 0.0000023f;
+    const float b14 = 0.0000024f;
+    const float b15 = 0.0000025f;
+
+    for (uint32_t i = 0u; i < uniform_buffer.loop_count; i++) {
+        if (VULKAN_RATE_ILP == 1u) {
+            STEP(x0, x15, b0);
+            STEP(x1, x0, b1);
+            STEP(x2, x1, b2);
+            STEP(x3, x2, b3);
+            STEP(x4, x3, b4);
+            STEP(x5, x4, b5);
+            STEP(x6, x5, b6);
+            STEP(x7, x6, b7);
+            STEP(x8, x7, b8);
+            STEP(x9, x8, b9);
+            STEP(x10, x9, b10);
+            STEP(x11, x10, b11);
+            STEP(x12, x11, b12);
+            STEP(x13, x12, b13);
+            STEP(x14, x13, b14);
+            STEP(x15, x14, b15);
+        } else if (VULKAN_RATE_ILP == 2u) {
+            STEP(x0, x14, b0);
+            STEP(x1, x15, b1);
+            STEP(x2, x0, b2);
+            STEP(x3, x1, b3);
+            STEP(x4, x2, b4);
+            STEP(x5, x3, b5);
+            STEP(x6, x4, b6);
+            STEP(x7, x5, b7);
+            STEP(x8, x6, b8);
+            STEP(x9, x7, b9);
+            STEP(x10, x8, b10);
+            STEP(x11, x9, b11);
+            STEP(x12, x10, b12);
+            STEP(x13, x11, b13);
+            STEP(x14, x12, b14);
+            STEP(x15, x13, b15);
+        } else if (VULKAN_RATE_ILP == 3u) {
+            STEP(x0, x12, b0);
+            STEP(x1, x13, b1);
+            STEP(x2, x14, b2);
+            STEP(x3, x0, b3);
+            STEP(x4, x1, b4);
+            STEP(x5, x2, b5);
+            STEP(x6, x3, b6);
+            STEP(x7, x4, b7);
+            STEP(x8, x5, b8);
+            STEP(x9, x6, b9);
+            STEP(x10, x7, b10);
+            STEP(x11, x8, b11);
+            STEP(x12, x9, b12);
+            STEP(x13, x10, b13);
+            STEP(x14, x11, b14);
+        } else if (VULKAN_RATE_ILP == 4u) {
+            STEP(x0, x12, b0);
+            STEP(x1, x13, b1);
+            STEP(x2, x14, b2);
+            STEP(x3, x15, b3);
+            STEP(x4, x0, b4);
+            STEP(x5, x1, b5);
+            STEP(x6, x2, b6);
+            STEP(x7, x3, b7);
+            STEP(x8, x4, b8);
+            STEP(x9, x5, b9);
+            STEP(x10, x6, b10);
+            STEP(x11, x7, b11);
+            STEP(x12, x8, b12);
+            STEP(x13, x9, b13);
+            STEP(x14, x10, b14);
+            STEP(x15, x11, b15);
+        } else if (VULKAN_RATE_ILP == 8u) {
+            STEP(x0, x8, b0);
+            STEP(x1, x9, b1);
+            STEP(x2, x10, b2);
+            STEP(x3, x11, b3);
+            STEP(x4, x12, b4);
+            STEP(x5, x13, b5);
+            STEP(x6, x14, b6);
+            STEP(x7, x15, b7);
+            STEP(x8, x0, b8);
+            STEP(x9, x1, b9);
+            STEP(x10, x2, b10);
+            STEP(x11, x3, b11);
+            STEP(x12, x4, b12);
+            STEP(x13, x5, b13);
+            STEP(x14, x6, b14);
+            STEP(x15, x7, b15);
+        } else {
+            STEP(x0, x0, b0);
+            STEP(x1, x1, b1);
+            STEP(x2, x2, b2);
+            STEP(x3, x3, b3);
+            STEP(x4, x4, b4);
+            STEP(x5, x5, b5);
+            STEP(x6, x6, b6);
+            STEP(x7, x7, b7);
+            STEP(x8, x8, b8);
+            STEP(x9, x9, b9);
+            STEP(x10, x10, b10);
+            STEP(x11, x11, b11);
+            STEP(x12, x12, b12);
+            STEP(x13, x13, b13);
+            STEP(x14, x14, b14);
+            STEP(x15, x15, b15);
+        }
+    }
+
+    dummy_outputs.data[thread_index + 0u] = x0;
+    dummy_outputs.data[thread_index + 1u] = x1;
+    dummy_outputs.data[thread_index + 2u] = x2;
+    dummy_outputs.data[thread_index + 3u] = x3;
+    dummy_outputs.data[thread_index + 4u] = x4;
+    dummy_outputs.data[thread_index + 5u] = x5;
+    dummy_outputs.data[thread_index + 6u] = x6;
+    dummy_outputs.data[thread_index + 7u] = x7;
+    dummy_outputs.data[thread_index + 8u] = x8;
+    dummy_outputs.data[thread_index + 9u] = x9;
+    dummy_outputs.data[thread_index + 10u] = x10;
+    dummy_outputs.data[thread_index + 11u] = x11;
+    dummy_outputs.data[thread_index + 12u] = x12;
+    dummy_outputs.data[thread_index + 13u] = x13;
+    dummy_outputs.data[thread_index + 14u] = x14;
+    dummy_outputs.data[thread_index + 15u] = x15;
+}

@@ -33,7 +33,7 @@
 #define TRACE_COMPUTE(format, ...)
 #endif
 
-test_status VulkanComputePipelineInitialize(vulkan_shader *compute_shader, const char *entrypoint, vulkan_compute_pipeline *pipeline_handle) {
+test_status VulkanComputePipelineInitializeSpecialized(vulkan_shader *compute_shader, const char *entrypoint, const VkSpecializationInfo *specialization_info, vulkan_compute_pipeline *pipeline_handle) {
     TRACE_COMPUTE("Initializing compute pipeline 0x%p (compute shader: 0x%p, entrypoint: \"%s\")\n", pipeline_handle, compute_shader, entrypoint);
     if (compute_shader == NULL || pipeline_handle == NULL) {
         return TEST_INVALID_PARAMETER;
@@ -46,6 +46,10 @@ test_status VulkanComputePipelineInitialize(vulkan_shader *compute_shader, const
     }
     pipeline_handle->pipeline = VK_NULL_HANDLE;
     pipeline_handle->descriptor_pool = VK_NULL_HANDLE;
+    pipeline_handle->descriptor_sets = NULL;
+    pipeline_handle->descriptor_set_indices = NULL;
+    pipeline_handle->device = compute_shader->device;
+    pipeline_handle->shader = compute_shader;
 
     VkComputePipelineCreateInfo compute_pipeline_create_info = {0};
     compute_pipeline_create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -55,6 +59,7 @@ test_status VulkanComputePipelineInitialize(vulkan_shader *compute_shader, const
     compute_pipeline_create_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     compute_pipeline_create_info.stage.module = compute_shader->shader_module;
     compute_pipeline_create_info.stage.pName = entrypoint;
+    compute_pipeline_create_info.stage.pSpecializationInfo = specialization_info;
     compute_pipeline_create_info.layout = compute_shader->pipeline_layout;
 
     VkResult res = vkCreateComputePipelines(compute_shader->device->device, VK_NULL_HANDLE, 1, &compute_pipeline_create_info, NULL, &(pipeline_handle->pipeline));
@@ -142,8 +147,6 @@ test_status VulkanComputePipelineInitialize(vulkan_shader *compute_shader, const
         pipeline_handle->descriptor_set_indices[i] = descriptor_set->index;
     }
 
-    pipeline_handle->device = compute_shader->device;
-    pipeline_handle->shader = compute_shader;
     return TEST_OK;
 free_descriptor_set_indices:
     free(pipeline_handle->descriptor_set_indices);
@@ -156,6 +159,10 @@ cleanup_descriptor_pool:
 cleanup_pipeline:
     vkDestroyPipeline(pipeline_handle->device->device, pipeline_handle->pipeline, NULL);
     return status;
+}
+
+test_status VulkanComputePipelineInitialize(vulkan_shader *compute_shader, const char *entrypoint, vulkan_compute_pipeline *pipeline_handle) {
+    return VulkanComputePipelineInitializeSpecialized(compute_shader, entrypoint, NULL, pipeline_handle);
 }
 
 test_status VulkanComputePipelineCleanUp(vulkan_compute_pipeline *pipeline_handle) {

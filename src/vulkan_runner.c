@@ -32,6 +32,7 @@
 #include "tests/test_vk_cuprobe.h"
 #include "tests/test_vk_latency.h"
 #include "tests/test_vk_rate.h"
+#include "tests/test_vk_rate_fp32_mac_ilp.h"
 #include "tests/test_vk_rate_pixel_fill.h"
 #include "tests/test_vk_rate_ray_isect.h"
 #include "tests/test_vk_rate_texture_cache.h"
@@ -52,6 +53,8 @@ test_status VulkanRunnerRegisterTests() {
     status = TestsVulkanLatencyRegister();
     TEST_RETFAIL(status);
     status = TestsVulkanRateRegister();
+    TEST_RETFAIL(status);
+    status = TestsVulkanRateFp32MacIlpRegister();
     TEST_RETFAIL(status);
     status = TestsVulkanRatePixelFillRegister();
     TEST_RETFAIL(status);

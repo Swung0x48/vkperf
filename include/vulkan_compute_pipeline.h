@@ -38,6 +38,7 @@ typedef struct vulkan_compute_pipeline_t {
 } vulkan_compute_pipeline;
 
 test_status VulkanComputePipelineInitialize(vulkan_shader *compute_shader, const char *entrypoint, vulkan_compute_pipeline *pipeline_handle);
+test_status VulkanComputePipelineInitializeSpecialized(vulkan_shader *compute_shader, const char *entrypoint, const VkSpecializationInfo *specialization_info, vulkan_compute_pipeline *pipeline_handle);
 test_status VulkanComputePipelineCleanUp(vulkan_compute_pipeline *pipeline_handle);
 test_status VulkanComputePipelineBind(vulkan_compute_pipeline *pipeline_handle, vulkan_memory *memory_handle, const char *binding_name);
 
